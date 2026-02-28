@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Home</title>
+    </head>
+
+    <body>
+        <h1>ようこそ</h1>
+
+        <button id="logout">ログアウト</button>
+    </body>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged }
+        from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC3-LJK9pSYSE5DWqMjkvitWVc71sfVwPE",
+            authDomain: "loginsystem-takeuchi.firebaseapp.com",
+            projectId: "loginsystem-takeuchi",
+            storageBucket: "loginsystem-takeuchi.firebasestorage.app",
+            messagingSenderId: "497510084891",
+            appId: "1:497510084891:web:7c000b83bf5162023ee3be",
+            measurementId: "G-7ELHSMWRCZ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const logoutbtn = document.getElementById("logout");
+
+        onAuthStateChanged(auth, (user) => {
+            if(!user) {
+                window.location.href = "index.html";
+            }
+        });
+
+        logoutbtn.addEventListener("click", function() {
+            signOut(auth)
+                .then(() => {
+                    window.location.href = "index.html";
+                })
+                .catch((error) => {
+                    alert("ログアウト失敗：" + error.message);
+                });
+        });
+    </script>
+</html>

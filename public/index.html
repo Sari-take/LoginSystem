@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Login System</title>
+  </head>
+
+  <body>
+    <h1>ログインシステム</h1> 
+    <p>メールアドレス</p>
+    <input type="email" id="address" name="address">
+    <p>パスワード</p>
+    <input type="password" id="pass" name="pass">
+    <br>
+    <br>
+    <button id="login">ログイン</button>
+    <br>
+    <br>
+    <button id="registration">新規登録</button>
+  </body>
+
+  <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyC3-LJK9pSYSE5DWqMjkvitWVc71sfVwPE",
+    authDomain: "loginsystem-takeuchi.firebaseapp.com",
+    projectId: "loginsystem-takeuchi",
+    storageBucket: "loginsystem-takeuchi.firebasestorage.app",
+    messagingSenderId: "497510084891",
+    appId: "1:497510084891:web:7c000b83bf5162023ee3be",
+    measurementId: "G-7ELHSMWRCZ"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const loginbtn = document.getElementById("login");
+  const registrationbtn = document.getElementById("registration");
+
+  onAuthStateChanged(auth, (user) => {
+    if(user) {
+      window.location.href = "home.html";
+    }
+  });
+
+  loginbtn.addEventListener("click", function() {
+    const email = document.getElementById("address").value;
+    const password = document.getElementById("pass").value;
+
+    signInWithEmailAndPassword(auth, email, password)
+      .then(() => {
+        window.location.href = "home.html";
+      })
+      .catch((error) => {
+        alert("ログインに失敗：" + error.message);
+      });
+  });
+
+  registrationbtn.addEventListener("click", function() {
+    const email = document.getElementById("address").value;
+    const password = document.getElementById("pass").value;
+
+    createUserWithEmailAndPassword(auth, email, password)
+      .then(() => {
+        alert("新規登録に成功");
+      })
+      .catch(() => {
+        alert("新規登録に失敗：" + error.message);
+      });
+  });
+</script>
+</html>
