@@ -6,15 +6,41 @@
     </head>
 
     <body>
-        <h1>ようこそ</h1>
+        <h1>ようこそ <span id="name">ゲスト</span> さん</h1>
 
+        <input type="text" id="userName" placeholder="ユーザー名の設定/変更">
+        <button id="saveName">決定</button>
+        <br>
+
+        <hr>
+        <h2>メモ帳</h2>
+
+        <input type="text" id="memoFile" placeholder="ファイル名">
+        <button id="makeMemo" >作成</button>
+        <br>
+
+        <div id="memoSection" style="display: none;">
+            <h4 id="currentFileName"></h4>
+            <textarea id="memoText" placeholder="内容を入力" rows="5"></textarea>
+            <br>
+            <button id="saveText">保存</button>
+        </div>
+
+        <br>
+
+        <div id="memoList">
+            <h2>保存済みのメモ一覧</h2>
+            <div id="memoListSelect"></div>
+        </div>
+
+        <br>
         <button id="logout">ログアウト</button>
     </body>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-        import { getAuth, signOut, onAuthStateChanged }
-        from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC3-LJK9pSYSE5DWqMjkvitWVc71sfVwPE",
@@ -28,13 +54,131 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
+        const saveNameBtn = document.getElementById("saveName");
         const logoutbtn = document.getElementById("logout");
+        const name = document.getElementById("name");
+        const makeMemoBtn = document.getElementById("makeMemo");
+        const memoSection = document.getElementById("memoSection");
+        const currentFileName = document.getElementById("currentFileName");
+        const saveTextBtn = document.getElementById("saveText");
+        const memoListSelect = document.getElementById("memoListSelect");
 
-        onAuthStateChanged(auth, (user) => {
-            if(!user) {
+        onAuthStateChanged(auth, async (user) => {
+            if(user) {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+                
+                if(userDoc.exists()) {
+                    name.innerText = userDoc.data().name;
+                }
+                else {
+                    name.innerText = "名無し";
+                }
+
+                loadMemoList();
+            }
+            else {
                 window.location.href = "index.html";
             }
         });
+
+        saveNameBtn.addEventListener("click", function() {
+            const user = auth.currentUser;
+            const userName = document.getElementById("userName").value;
+
+            if(!user) {
+                window.location.href  = "index.html";
+            }
+            else if(userName === ""){
+                alert("ユーザー名が未入力です");
+            }
+            else if(userName !== "") {
+                setDoc(doc(db, "users", user.uid), { name: userName })
+                    .then(() => {
+                        document.querySelector("h1").innerText = "ようこそ " + userName + "さん";
+                        alert("ログインID「" + user.uid +"」のユーザー名を" + userName + "に変更しました");
+                    })
+                    .catch((error) => {
+                        alert("ユーザー名の変更に失敗しました：" + error.message);
+                    });
+            }
+            else {
+                alert("問題が発生したようです");
+            }
+        });
+
+        makeMemoBtn.addEventListener("click", function() {
+            const memoFileName = document.getElementById("memoFile").value;
+            
+            if(memoFileName !== "") {
+                memoSection.style.display = "block";
+                currentFileName.innerText = memoFileName + " を開いています";
+            }
+            else {
+                alert("ファイル名が未入力です");
+            }
+        });
+
+        saveTextBtn.addEventListener("click", async function() {
+            const user = auth.currentUser;
+            const memoFileName = document.getElementById("memoFile").value;
+            const memoText = document.getElementById("memoText").value;
+            
+            if(!user) {
+                window.location.href  = "index.html";
+            }
+            else if(memoText !== "") {
+                try {
+                    await setDoc(doc(db, "users", user.uid, "memos", memoFileName), {
+                        text: memoText, 
+                        updatedAt: new Date()
+                    });
+
+                    loadMemoList();
+
+                    memoSection.style.display = "none";
+                    document.getElementById("memoFile").value = "";
+                    document.getElementById("memoText").value = "";
+
+                    alert(memoFileName + "の内容を保存しました");
+                }
+                catch (error) {
+                    alert("保存に失敗しました：" + error.message);
+                }
+            }
+            else {
+                alert("メモの内容が未入力です");
+            }
+
+        });
+
+        async function loadMemoList() {
+            const user = auth.currentUser;
+
+            if(!user) return;
+
+            memoListSelect.innerHTML = "読み込み中...";
+
+            const querySnapshot = await getDocs(collection(db, "users", user.uid, "memos"));
+
+            memoListSelect.innerHTML = "";
+
+            querySnapshot.forEach((memo) => {
+                const btn = document.createElement("button");
+                btn.innerText = memo.id;
+                btn.style.margin = "5px";
+                btn.style.display = "block";
+                btn.onclick = () => {
+                    document.getElementById("memoFile").value = memo.id;
+                    document.getElementById("memoText").value = memo.data().text;
+                    memoSection.style.display = "block";
+                    currentFileName.innerText = memo.id + " を開いています";
+                };
+
+                memoListSelect.appendChild(btn);
+            });
+        }
 
         logoutbtn.addEventListener("click", function() {
             signOut(auth)
